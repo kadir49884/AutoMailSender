@@ -44,9 +44,9 @@ class MailSender:
         self.min_delay = 30     # Minimum bekleme süresi (30 saniye)
         self.max_delay = 90    # Maximum bekleme süresi (90 saniye)
         
-        # Veritabanı yolu (Railway persistent volume)
-        data_dir = os.getenv('DATA_DIR', '/data')
-        if not os.path.exists(data_dir):
+        # Veritabanı yolu (Railway persistent volume veya local)
+        data_dir = os.getenv('DATA_DIR', '.')
+        if data_dir != '.' and not os.path.exists(data_dir):
             os.makedirs(data_dir, exist_ok=True)
         self.db_path = os.path.join(data_dir, 'mail_tracking.db')
         
