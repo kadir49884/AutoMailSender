@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 Mail Açılma İstatistikleri - Vidlo Mail Sender</title>
+    <title>📊 Mail Tıklama İstatistikleri - Vidlo Mail Sender</title>
     <style>
         * {
             margin: 0;
@@ -128,7 +128,7 @@
         
         .template-row {
             display: grid;
-            grid-template-columns: 1fr 100px 100px 100px 150px;
+            grid-template-columns: 1fr 100px 100px 150px;
             gap: 15px;
             padding: 15px;
             border-bottom: 1px solid #f0f0f0;
@@ -202,8 +202,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Mail Açılma İstatistikleri</h1>
-            <p style="color: #666; margin-top: 10px;">Gönderilen maillerin açılma oranlarını takip edin</p>
+            <h1>📊 Mail Tıklama İstatistikleri</h1>
+            <p style="color: #666; margin-top: 10px;">Gönderilen maillerin tıklama oranlarını takip edin</p>
             <div class="nav-buttons">
                 <a href="/" class="btn">🏠 Ana Sayfa</a>
                 <a href="/database" class="btn">📋 Veritabanı</a>
@@ -219,26 +219,9 @@
             </div>
             
             <div class="stat-card">
-                <h3>✅ Açılan Mailler</h3>
-                <div class="stat-value">{{ stats.overall.total_opened }}</div>
-                <div class="stat-label">Mail</div>
-            </div>
-            
-            <div class="stat-card">
                 <h3>🎯 Button Tıklamaları</h3>
                 <div class="stat-value">{{ stats.overall.total_clicked }}</div>
                 <div class="stat-label">Clicked</div>
-            </div>
-            
-            <div class="stat-card">
-                <h3>📈 Açılma Oranı</h3>
-                <div class="stat-value">{{ "%.1f"|format(stats.overall.open_rate) }}%</div>
-                <div class="stat-label">Open Rate</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ stats.overall.open_rate }}%;">
-                        {{ "%.1f"|format(stats.overall.open_rate) }}%
-                    </div>
-                </div>
             </div>
             
             <div class="stat-card">
@@ -260,7 +243,6 @@
                 <div class="template-row header">
                     <div>Template Adı</div>
                     <div>Gönderilen</div>
-                    <div>Açılan</div>
                     <div>Tıklanan</div>
                     <div>Click Rate</div>
                 </div>
@@ -269,7 +251,6 @@
                 <div class="template-row">
                     <div class="template-name">{{ template.template }}</div>
                     <div class="stat-number">{{ template.sent }}</div>
-                    <div class="stat-number">{{ template.opened }}</div>
                     <div class="stat-number">{{ template.clicked }}</div>
                     <div>
                         {% if template.click_rate >= 30 %}

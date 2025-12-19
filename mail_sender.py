@@ -685,10 +685,6 @@ To unsubscribe, reply with 'Unsubscribe' in the subject line.
                     button_url=button_url  # Click tracking URL
                 )
                 
-                # Tracking pixel ekle (Açılma tracking)
-                tracking_pixel = f'<img src="{tracking_url}/track/{tracking_id}" width="1" height="1" style="display:none;" />'
-                html_content = html_content.replace('</body>', f'{tracking_pixel}</body>')
-                
                 # Plain text önce, sonra HTML (mail clientlar en iyisini seçer)
                 msg.attach(MIMEText(plain_text, 'plain'))
                 msg.attach(MIMEText(html_content, 'html'))
