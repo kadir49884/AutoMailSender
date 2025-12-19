@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kullanıcılar - Vidlo Mail</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #2E7D32; margin-bottom: 30px; }
+        .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav a { padding: 10px 20px; background: white; border-radius: 6px; text-decoration: none; color: #2E7D32; font-weight: bold; }
+        .nav a:hover { background: #2E7D32; color: white; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .user-item { padding: 15px; border-bottom: 1px solid #eee; }
+        .user-item:last-child { border-bottom: none; }
+        .user-email { font-weight: bold; color: #2E7D32; }
+        .user-name { color: #666; margin-left: 10px; }
+        .total { background: #e3f2fd; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👥 Kullanıcı Listesi</h1>
+        
+        <div class="nav">
+            <a href="/">Dashboard</a>
+            <a href="/users">Kullanıcılar</a>
+            <a href="/database">Veritabanı</a>
+        </div>
+        
+        <div class="total">
+            Toplam {{ total }} kullanıcı bulundu
+        </div>
+        
+        <div class="card">
+            {% for user in users %}
+            <div class="user-item">
+                <span class="user-email">{{ user.email }}</span>
+                {% if user.display_name %}
+                <span class="user-name">- {{ user.display_name }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
+

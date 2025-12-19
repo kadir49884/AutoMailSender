@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Database
+*.db
+
+# Logs
+*.log
+mail_logs.log
+
+# Environment
+.env
+
+# Firebase
+firebase-credentials.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Railway
+.railway/
+

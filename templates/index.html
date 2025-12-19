@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vidlo Mail Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #2E7D32; margin-bottom: 30px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 10px; }
+        .stat-card .value { font-size: 32px; font-weight: bold; color: #2E7D32; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        select, button { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        button { background: #2E7D32; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        button:hover { background: #1B5E20; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .status { padding: 15px; background: #e3f2fd; border-left: 4px solid #2196F3; margin-bottom: 20px; border-radius: 4px; }
+        .progress-bar { width: 100%; height: 30px; background: #eee; border-radius: 15px; overflow: hidden; margin: 20px 0; }
+        .progress-fill { height: 100%; background: #2E7D32; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .nav { display: flex; gap: 10px; margin-bottom: 20px; }
+        .nav a { padding: 10px 20px; background: white; border-radius: 6px; text-decoration: none; color: #2E7D32; font-weight: bold; }
+        .nav a:hover { background: #2E7D32; color: white; }
+        .stop-btn { background: #f44336; }
+        .stop-btn:hover { background: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Vidlo Mail Dashboard</h1>
+        
+        <div class="nav">
+            <a href="/">Dashboard</a>
+            <a href="/users">Kullanıcılar</a>
+            <a href="/database">Veritabanı</a>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Aktif Hesaplar</h3>
+                <div class="value">{{ stats.total_accounts }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Günlük Limit</h3>
+                <div class="value">{{ stats.daily_limit }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Bugün Gönderilen</h3>
+                <div class="value">{{ stats.sent_today }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Kalan</h3>
+                <div class="value">{{ stats.daily_limit - stats.sent_today }}</div>
+            </div>
+        </div>
+        
+        <div class="status" id="statusBox">
+            <strong>Durum:</strong> <span id="statusText">{{ status.message }}</span>
+        </div>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill">0%</div>
+        </div>
+        
+        <div class="card">
+            <h2>Mail Gönder</h2>
+            <form id="sendForm">
+                <div class="form-group">
+                    <label>Mail Şablonu:</label>
+                    <select name="template" id="template" required>
+                        {% for template in stats.templates %}
+                        <option value="{{ template }}">{{ template }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" name="send_type" value="unsent" id="sendUnsent">
+                        Gönderilmeyenlere Gönder
+                    </button>
+                    <button type="submit" name="send_type" value="all" id="sendAll">
+                        Tüm Listeye Gönder
+                    </button>
+                </div>
+                
+                <button type="button" class="stop-btn" id="stopBtn" style="display: none;">
+                    ⏹️ Durdur
+                </button>
+            </form>
+        </div>
+        
+        <div class="card" id="resultsCard" style="display: none;">
+            <h3>Sonuçlar</h3>
+            <p><strong>Başarılı:</strong> <span id="successCount">0</span></p>
+            <p><strong>Başarısız:</strong> <span id="failedCount">0</span></p>
+            <p><strong>İlerleme:</strong> <span id="progressText">0/0</span></p>
+        </div>
+    </div>
+    
+    <script>
+        let statusInterval;
+        
+        document.getElementById('sendForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const sendType = e.submitter.value;
+            formData.set('send_type', sendType);
+            
+            if (!confirm(`"${formData.get('template')}" şablonunu ${sendType === 'all' ? 'TÜM kullanıcılara' : 'gönderilmeyenlere'} göndermek istediğinize emin misiniz?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/send', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('sendUnsent').disabled = true;
+                    document.getElementById('sendAll').disabled = true;
+                    document.getElementById('stopBtn').style.display = 'block';
+                    document.getElementById('progressBar').style.display = 'block';
+                    document.getElementById('resultsCard').style.display = 'block';
+                    
+                    startStatusCheck();
+                } else {
+                    alert('Hata: ' + data.error);
+                }
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            }
+        });
+        
+        document.getElementById('stopBtn').addEventListener('click', async () => {
+            if (!confirm('Mail gönderimini durdurmak istediğinize emin misiniz?')) {
+                return;
+            }
+            
+            try {
+                await fetch('/stop', { method: 'POST' });
+                stopStatusCheck();
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            }
+        });
+        
+        function startStatusCheck() {
+            statusInterval = setInterval(updateStatus, 2000);
+        }
+        
+        function stopStatusCheck() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+            document.getElementById('sendUnsent').disabled = false;
+            document.getElementById('sendAll').disabled = false;
+            document.getElementById('stopBtn').style.display = 'none';
+        }
+        
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const status = await response.json();
+                
+                document.getElementById('statusText').textContent = status.message;
+                document.getElementById('successCount').textContent = status.success;
+                document.getElementById('failedCount').textContent = status.failed;
+                document.getElementById('progressText').textContent = `${status.progress}/${status.total}`;
+                
+                if (status.total > 0) {
+                    const percentage = Math.round((status.progress / status.total) * 100);
+                    document.getElementById('progressFill').style.width = percentage + '%';
+                    document.getElementById('progressFill').textContent = percentage + '%';
+                }
+                
+                if (!status.running && statusInterval) {
+                    stopStatusCheck();
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+        
+        // Sayfa yüklendiğinde durumu kontrol et
+        updateStatus();
+    </script>
+</body>
+</html>
+

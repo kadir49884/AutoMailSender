@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Vidlo Mail Preview</title>
+        <style>
+            body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                margin: 0;
+                padding: 20px;
+                background-color: #f0f0f0;
+                min-height: 100vh;
+            }
+
+            .container {
+                background-color: #ffffff;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                padding: 40px;
+                max-width: 600px;
+                margin: 0 auto;
+                transition: all 0.3s ease;
+            }
+
+            h2 {
+                color: #2E7D32;
+                text-align: center;
+                margin-bottom: 25px;
+                font-size: 28px;
+            }
+
+            .welcome-text {
+                font-size: 18px;
+                margin-bottom: 25px;
+                text-align: center;
+                line-height: 1.8;
+            }
+
+            .feedback-section {
+                text-align: center;
+                margin: 40px 0;
+                padding: 30px;
+                border-radius: 12px;
+                background: #F5F5F5;
+            }
+
+            .feedback-section h3 {
+                color: #2E7D32;
+                margin-bottom: 20px;
+                font-size: 22px;
+            }
+
+            .button {
+                display: inline-block;
+                background-color: #2E7D32;
+                color: white;
+                padding: 15px 35px;
+                text-decoration: none;
+                border-radius: 30px;
+                margin: 20px 0;
+                font-weight: bold;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .button:hover {
+                background-color: #1B5E20;
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            }
+
+            .store-image {
+                width: 100%;
+                max-width: 300px;
+                height: auto;
+                margin-top: 30px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                transition: transform 0.3s ease;
+            }
+
+            .store-image:hover {
+                transform: scale(1.02);
+            }
+
+            .footer {
+                text-align: center;
+                font-size: 13px;
+                color: #666666;
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #eeeeee;
+            }
+
+            /* Test Kontrolleri */
+            .test-controls {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: white;
+                padding: 20px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+                z-index: 1000;
+            }
+
+            .test-controls input {
+                margin-bottom: 10px;
+                padding: 8px 12px;
+                width: 200px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+            }
+
+            .test-controls button {
+                background: #2E7D32;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 6px;
+                cursor: pointer;
+                margin: 5px;
+                transition: all 0.3s ease;
+            }
+
+            .test-controls button:hover {
+                background: #1B5E20;
+                transform: translateY(-1px);
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Test Kontrolleri -->
+        <div class="test-controls">
+            <input type="text" id="username" placeholder="Kullanıcı adı" value="Test Kullanıcı">
+            <br>
+            <button onclick="updatePreview()">İsmi Güncelle</button>
+        </div>
+
+        <!-- Mail İçeriği -->
+        <div class="container">
+            <h2>Merhaba <span id="preview-name">Test Kullanıcı</span>! 👋</h2>
+            
+            <div class="welcome-text">
+                <p>Vidlo Video Chat'i tercih ettiğiniz için teşekkür ederiz! 🙏</p>
+                <p>Sizin gibi değerli kullanıcılarımızın desteğiyle her geçen gün büyüyoruz. ✨</p>
+            </div>
+            
+            <div class="feedback-section">
+                <h3>🌟 Görüşleriniz Bizim İçin Çok Değerli</h3>
+                <p>Yeni bir uygulama olarak, her kullanıcımızın deneyimi bizim için çok önemli.</p>
+                <p>Eğer uygulamamızı beğendiyseniz, Google Play'de 5 yıldız ⭐⭐⭐⭐⭐ vererek bizi destekleyebilirsiniz.</p>
+            </div>
+            
+            <center>
+                <a href="https://play.google.com/store/apps/details?id=com.PetrichorGames.RandooVideoChat" class="button">
+                    Şimdi Değerlendir ⭐
+                </a>
+                <br>
+                <img src="assets/storeimage.png" alt="Vidlo Video Chat Store" class="store-image">
+            </center>
+            
+            <div class="footer">
+                <p>Herhangi bir sorunuz olursa <a href="mailto:petrichorgm@gmail.com">petrichorgm@gmail.com</a> adresinden bize ulaşabilirsiniz.</p>
+                <p>Mail listesinden çıkmak için <a href="#">tıklayınız</a></p>
+                <p>© 2024 Vidlo Video Chat. Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+
+        <script>
+            function updatePreview() {
+                const username = document.getElementById('username').value;
+                document.getElementById('preview-name').textContent = username;
+            }
+        </script>
+    </body>
+</html> 

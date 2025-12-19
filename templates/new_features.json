@@ -1,0 +1,16 @@
+{
+    "subject": "New Features Available on Vidlo! 🚀",
+    "title": "Hey {display_name}! 🎉",
+    "content": [
+        "We've just released exciting new features on Vidlo Video Chat!",
+        "Update your app to enjoy the latest improvements! ✨"
+    ],
+    "action_title": "🚀 What's New",
+    "action_text": [
+        "- Enhanced video quality and stability",
+        "- New fun filters and effects",
+        "- Improved matching algorithm",
+        "- Better user interface"
+    ],
+    "button_text": "Install App 📲"
+} 
