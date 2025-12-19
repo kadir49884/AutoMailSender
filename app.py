@@ -205,6 +205,20 @@ def track_open(tracking_id):
     pixel = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
     return pixel, 200, {'Content-Type': 'image/png', 'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
+@app.route('/click/<tracking_id>')
+def track_click(tracking_id):
+    """Button tıklama tracking endpoint (Play Store'a yönlendirir)"""
+    try:
+        init_sender()
+        # Tıklamayı kaydet
+        sender.mark_email_clicked(tracking_id)
+        logging.info(f"Mail button tıklandı: {tracking_id}")
+    except Exception as e:
+        logging.error(f"Click tracking hatası: {str(e)}")
+    
+    # Play Store'a yönlendir
+    return redirect('https://play.google.com/store/apps/details?id=com.PetrichorGames.RandooVideoChat', code=302)
+
 @app.route('/stats')
 def stats():
     """Mail açılma istatistiklerini gösterir"""

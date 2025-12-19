@@ -320,18 +320,55 @@ class MailSender:
         finally:
             conn.close()
     
+    def mark_email_clicked(self, tracking_id):
+        """Button tıklandığında tracking ID'ye göre database'i günceller"""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor()
+            # Clicked kolonu yoksa ekle
+            try:
+                cursor.execute("ALTER TABLE sent_mails ADD COLUMN clicked INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE sent_mails ADD COLUMN clicked_date TIMESTAMP")
+                conn.commit()
+            except:
+                pass  # Kolon zaten var
+            
+            cursor.execute('''
+                UPDATE sent_mails 
+                SET clicked = 1, clicked_date = ?, opened = 1, opened_date = COALESCE(opened_date, ?)
+                WHERE tracking_id = ?
+            ''', (datetime.now(), datetime.now(), tracking_id))
+            conn.commit()
+            
+            return cursor.rowcount > 0
+        except Exception as e:
+            logging.error(f"Click kaydı hatası: {str(e)}")
+            return False
+        finally:
+            conn.close()
+    
     def get_open_rate_stats(self):
-        """Mail açılma istatistiklerini getirir"""
+        """Mail açılma ve tıklama istatistiklerini getirir"""
         conn = self.get_db_connection()
         try:
             cursor = conn.cursor()
             
-            # Toplam gönderilen ve açılan mail sayıları
+            # clicked kolonu yoksa ekle
+            try:
+                cursor.execute("ALTER TABLE sent_mails ADD COLUMN clicked INTEGER DEFAULT 0")
+                cursor.execute("ALTER TABLE sent_mails ADD COLUMN clicked_date TIMESTAMP")
+                conn.commit()
+            except:
+                pass  # Kolon zaten var
+            
+            # Toplam gönderilen, açılan ve tıklanan mail sayıları
             cursor.execute('''
                 SELECT 
                     COUNT(*) as total_sent,
                     SUM(opened) as total_opened,
-                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate
+                    SUM(clicked) as total_clicked,
+                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate,
+                    ROUND(CAST(SUM(clicked) AS FLOAT) / COUNT(*) * 100, 2) as click_rate
                 FROM sent_mails
                 WHERE tracking_id IS NOT NULL
             ''')
@@ -343,7 +380,9 @@ class MailSender:
                     template_name,
                     COUNT(*) as sent,
                     SUM(opened) as opened,
-                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate
+                    SUM(clicked) as clicked,
+                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate,
+                    ROUND(CAST(SUM(clicked) AS FLOAT) / COUNT(*) * 100, 2) as click_rate
                 FROM sent_mails
                 WHERE tracking_id IS NOT NULL
                 GROUP BY template_name
@@ -354,14 +393,18 @@ class MailSender:
                 'overall': {
                     'total_sent': overall[0] or 0,
                     'total_opened': overall[1] or 0,
-                    'open_rate': overall[2] or 0.0
+                    'total_clicked': overall[2] or 0,
+                    'open_rate': overall[3] or 0.0,
+                    'click_rate': overall[4] or 0.0
                 },
                 'by_template': [
                     {
                         'template': row[0],
                         'sent': row[1],
                         'opened': row[2] or 0,
-                        'open_rate': row[3] or 0.0
+                        'clicked': row[3] or 0,
+                        'open_rate': row[4] or 0.0,
+                        'click_rate': row[5] or 0.0
                     }
                     for row in by_template
                 ]
@@ -595,17 +638,21 @@ To unsubscribe, reply with 'Unsubscribe' in the subject line.
 © 2024 Vidlo Video Chat. All rights reserved.
                 """.strip()
                 
+                # Tracking URL'leri hazırla
+                tracking_url = os.getenv('RAILWAY_PUBLIC_URL', 'http://localhost:5000')
+                button_url = f'{tracking_url}/click/{tracking_id}'  # Button tracking URL
+                
                 # HTML içeriği hazırla
                 html_content = self.html_template.format(
                     title=template['title'].format(display_name=display_name),
                     content="\n".join(template['content']),
                     action_title=template['action_title'],
                     action_text="\n".join(template['action_text']),
-                    button_text=template['button_text']
+                    button_text=template['button_text'],
+                    button_url=button_url  # Click tracking URL
                 )
                 
-                # Tracking pixel ekle (Railway URL'den veya localhost'tan)
-                tracking_url = os.getenv('RAILWAY_PUBLIC_URL', 'http://localhost:5000')
+                # Tracking pixel ekle (Açılma tracking)
                 tracking_pixel = f'<img src="{tracking_url}/track/{tracking_id}" width="1" height="1" style="display:none;" />'
                 html_content = html_content.replace('</body>', f'{tracking_pixel}</body>')
                 

@@ -99,36 +99,30 @@ class SingleMailThread(QThread):
                 self.error.emit("Mail adresi kara listede!")
                 return
             
-            users = self.sender.get_firebase_users()
-            user = next((u for u in users if u['email'] == self.email), None)
+            # Firebase'den kullanıcı bilgilerini al (varsa display_name için)
+            # Tekli mail göndermede Firebase'de olup olmadığı önemli değil
+            display_name = None
+            try:
+                users = self.sender.get_firebase_users()
+                user = next((u for u in users if u['email'] == self.email), None)
+                display_name = user['display_name'] if user else None
+            except Exception as e:
+                # Firebase hatası olsa bile devam et
+                logging.warning(f"Firebase kullanıcı bilgisi alınamadı: {str(e)}")
             
-            if not user:
-                # Firebase'de olmayan adresi kara listeye ekle
-                self.sender.add_to_blacklist(self.email, "Firebase'de kayıtlı olmayan kullanıcı")
-                error_msg = f"❌ Mail gönderilemedi!\n\n"
-                error_msg += f"Email: {self.email}\n"
-                error_msg += f"Sebep: Mail adresi Firebase'de bulunamadı ve kara listeye eklendi!"
-                self.result.emit(error_msg)
-                self.error.emit("Mail adresi kara listeye eklendi!")
-                return
-            
-            display_name = user['display_name'] if user else None
             success = self.sender.send_mail(self.email, template_name=self.template_name, display_name=display_name)
             
             if success:
                 success_msg = f"✅ Mail başarıyla gönderildi!\n\n"
                 success_msg += f"Email: {self.email}\n"
                 success_msg += f"Template: {self.template_name}\n"
-                success_msg += f"Display Name: {display_name or 'Yok'}\n"
-                success_msg += f"Firebase Durumu: {'✅ Kayıtlı' if user else '❌ Kayıtlı Değil'}\n"
+                success_msg += f"Display Name: {display_name or 'N/A'}\n"
                 success_msg += f"Tarih: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}"
                 
                 self.result.emit(success_msg)
                 
-                # Spam önlemi için bekleme
-                sleep_time = random.randint(30, 90)
-                self.status.emit(f"Spam önlemi: {sleep_time} saniye bekleniyor...")
-                time.sleep(sleep_time)
+                # Tekli mail göndermede spam önlemi yok
+                # Kullanıcı test için hemen tekrar gönderebilir
             else:
                 # Log dosyasından son hatayı al
                 try:
@@ -146,7 +140,13 @@ class SingleMailThread(QThread):
                 self.error.emit("Mail gönderilemedi!")
                 
         except Exception as e:
-            self.error.emit(str(e))
+            import traceback
+            error_detail = traceback.format_exc()
+            error_msg = f"❌ Beklenmeyen hata!\n\n"
+            error_msg += f"Hata: {str(e)}\n\n"
+            error_msg += f"Detay:\n{error_detail}"
+            self.result.emit(error_msg)
+            self.error.emit(f"Hata: {str(e)}")
         finally:
             self.status.emit("Hazır")
             self.finished.emit()
@@ -436,6 +436,11 @@ Buton: {template['button_text']}
             self.mail_thread.start()
     
     def send_to_single(self):
+        # Önceki thread hala çalışıyorsa uyar
+        if hasattr(self, 'single_thread') and self.single_thread.isRunning():
+            QMessageBox.information(self, "Bilgi", "Bir mail gönderimi devam ediyor. Lütfen bekleyin...")
+            return
+        
         email = self.single_mail_entry.text().strip()
         if not email:
             QMessageBox.critical(self, "Hata", "Lütfen bir e-posta adresi girin!")
@@ -446,9 +451,8 @@ Buton: {template['button_text']}
             QMessageBox.critical(self, "Hata", "Lütfen bir şablon seçin!")
             return
         
-        if self.sender.is_mail_sent(email, template_name):
-            QMessageBox.warning(self, "Uyarı", f"Bu mail adresine '{template_name}' maili daha önce gönderilmiş!")
-            return
+        # Tekli mail göndermede duplicate kontrolü yapma - her zaman gönder
+        # (Kullanıcı test için aynı mail'e birden fazla kez gönderebilir)
         
         self.single_thread = SingleMailThread(self.sender, email, template_name)
         self.single_thread.status.connect(self.status_label.setText)

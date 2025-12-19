@@ -128,7 +128,7 @@
         
         .template-row {
             display: grid;
-            grid-template-columns: 1fr 100px 100px 150px;
+            grid-template-columns: 1fr 100px 100px 100px 150px;
             gap: 15px;
             padding: 15px;
             border-bottom: 1px solid #f0f0f0;
@@ -225,12 +225,29 @@
             </div>
             
             <div class="stat-card">
+                <h3>🎯 Button Tıklamaları</h3>
+                <div class="stat-value">{{ stats.overall.total_clicked }}</div>
+                <div class="stat-label">Clicked</div>
+            </div>
+            
+            <div class="stat-card">
                 <h3>📈 Açılma Oranı</h3>
                 <div class="stat-value">{{ "%.1f"|format(stats.overall.open_rate) }}%</div>
                 <div class="stat-label">Open Rate</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: {{ stats.overall.open_rate }}%;">
                         {{ "%.1f"|format(stats.overall.open_rate) }}%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>🚀 Tıklama Oranı</h3>
+                <div class="stat-value">{{ "%.1f"|format(stats.overall.click_rate) }}%</div>
+                <div class="stat-label">Click Rate</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ stats.overall.click_rate }}%;">
+                        {{ "%.1f"|format(stats.overall.click_rate) }}%
                     </div>
                 </div>
             </div>
@@ -244,7 +261,8 @@
                     <div>Template Adı</div>
                     <div>Gönderilen</div>
                     <div>Açılan</div>
-                    <div>Açılma Oranı</div>
+                    <div>Tıklanan</div>
+                    <div>Click Rate</div>
                 </div>
                 
                 {% for template in stats.by_template %}
@@ -252,13 +270,14 @@
                     <div class="template-name">{{ template.template }}</div>
                     <div class="stat-number">{{ template.sent }}</div>
                     <div class="stat-number">{{ template.opened }}</div>
+                    <div class="stat-number">{{ template.clicked }}</div>
                     <div>
-                        {% if template.open_rate >= 20 %}
-                            <span class="rate-badge rate-high">{{ "%.1f"|format(template.open_rate) }}%</span>
-                        {% elif template.open_rate >= 10 %}
-                            <span class="rate-badge rate-medium">{{ "%.1f"|format(template.open_rate) }}%</span>
+                        {% if template.click_rate >= 30 %}
+                            <span class="rate-badge rate-high">{{ "%.1f"|format(template.click_rate) }}%</span>
+                        {% elif template.click_rate >= 15 %}
+                            <span class="rate-badge rate-medium">{{ "%.1f"|format(template.click_rate) }}%</span>
                         {% else %}
-                            <span class="rate-badge rate-low">{{ "%.1f"|format(template.open_rate) }}%</span>
+                            <span class="rate-badge rate-low">{{ "%.1f"|format(template.click_rate) }}%</span>
                         {% endif %}
                     </div>
                 </div>
