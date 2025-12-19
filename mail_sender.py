@@ -39,9 +39,6 @@ class MailSender:
         self.mail_accounts = []
         self.load_mail_accounts()
         
-        # SMTP bağlantılarını aç
-        self.init_smtp_connections()
-        
         self.current_account_index = 0
         self.daily_limit_per_account = 500  # Her hesap için günlük limit
         self.min_delay = 30     # Minimum bekleme süresi (30 saniye)
@@ -91,16 +88,6 @@ class MailSender:
         
         logging.info(f"Toplam {len(self.mail_accounts)} aktif mail hesabı yüklendi")
         
-    def init_smtp_connections(self):
-        """Tüm mail hesapları için SMTP bağlantılarını açar"""
-        for account in self.mail_accounts:
-            try:
-                # Başlangıçta SMTP bağlantısı kurmuyoruz
-                account['smtp'] = None
-                logging.info(f"Mail hesabı hazır: {account['email']}")
-            except Exception as e:
-                logging.error(f"SMTP bağlantı hatası ({account['email']}): {str(e)}")
-    
     def get_smtp_connection(self, account):
         """Hesap için yeni bir SMTP bağlantısı oluşturur"""
         try:
