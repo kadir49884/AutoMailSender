@@ -127,6 +127,41 @@ class MailSender:
                     pass
                 account['smtp'] = None
     
+    def test_smtp_connections(self):
+        """Tüm mail hesaplarının SMTP bağlantılarını test eder"""
+        results = []
+        for account in self.mail_accounts:
+            result = {
+                'email': account['email'],
+                'status': 'unknown',
+                'message': ''
+            }
+            
+            try:
+                # Yeni SMTP bağlantısı oluştur ve test et
+                smtp = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+                smtp.login(account['email'], account['password'])
+                smtp.noop()  # Bağlantıyı test et
+                smtp.quit()
+                
+                result['status'] = 'success'
+                result['message'] = 'Bağlantı başarılı ✅'
+                logging.info(f"SMTP test başarılı: {account['email']}")
+                
+            except smtplib.SMTPAuthenticationError:
+                result['status'] = 'error'
+                result['message'] = 'Kimlik doğrulama hatası (Şifre yanlış) ❌'
+                logging.error(f"SMTP auth hatası: {account['email']}")
+                
+            except Exception as e:
+                result['status'] = 'error'
+                result['message'] = f'Bağlantı hatası: {str(e)[:50]}... ❌'
+                logging.error(f"SMTP test hatası ({account['email']}): {str(e)}")
+            
+            results.append(result)
+        
+        return results
+    
     def load_templates(self):
         """templates klasöründeki tüm JSON dosyalarını yükler"""
         templates = {}  # Boş sözlük oluştur

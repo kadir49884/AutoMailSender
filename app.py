@@ -168,6 +168,28 @@ def stop():
     job_status['message'] = 'Durduruldu'
     return jsonify({'success': True})
 
+@app.route('/test_smtp', methods=['GET'])
+def test_smtp():
+    """SMTP bağlantılarını test eder"""
+    try:
+        init_sender()
+        results = sender.test_smtp_connections()
+        
+        # Genel durum
+        all_success = all(r['status'] == 'success' for r in results)
+        
+        return jsonify({
+            'success': True,
+            'all_connected': all_success,
+            'results': results,
+            'message': '✅ Tüm hesaplar bağlı!' if all_success else '⚠️ Bazı hesaplarda sorun var!'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Test hatası: {str(e)}'
+        }), 500
+
 @app.route('/health')
 def health():
     """Health check endpoint"""

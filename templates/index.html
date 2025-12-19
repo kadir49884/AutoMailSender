@@ -103,6 +103,18 @@
             <p><strong>Başarısız:</strong> <span id="failedCount">0</span></p>
             <p><strong>İlerleme:</strong> <span id="progressText">0/0</span></p>
         </div>
+        
+        <div class="card">
+            <h2>🔧 SMTP Bağlantı Testi</h2>
+            <p style="color: #666; margin-bottom: 15px;">Tüm mail hesaplarının bağlantı durumunu kontrol et</p>
+            <button type="button" id="testSmtpBtn" onclick="testSmtpConnections()">
+                🔍 Bağlantıları Test Et
+            </button>
+            <div id="smtpTestResults" style="margin-top: 20px; display: none;">
+                <h3>Test Sonuçları:</h3>
+                <div id="smtpResultsList"></div>
+            </div>
+        </div>
     </div>
     
     <script>
@@ -203,6 +215,59 @@
         
         // Sayfa yüklendiğinde durumu kontrol et
         updateStatus();
+        
+        // SMTP Test Fonksiyonu
+        async function testSmtpConnections() {
+            const btn = document.getElementById('testSmtpBtn');
+            const resultsDiv = document.getElementById('smtpTestResults');
+            const resultsList = document.getElementById('smtpResultsList');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ Test ediliyor...';
+            resultsDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/test_smtp');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultsList.innerHTML = '';
+                    
+                    data.results.forEach(result => {
+                        const resultItem = document.createElement('div');
+                        resultItem.style.padding = '10px';
+                        resultItem.style.marginTop = '10px';
+                        resultItem.style.borderRadius = '6px';
+                        resultItem.style.border = result.status === 'success' ? '2px solid #4CAF50' : '2px solid #f44336';
+                        resultItem.style.backgroundColor = result.status === 'success' ? '#f1f8f4' : '#ffebee';
+                        
+                        resultItem.innerHTML = `
+                            <strong>${result.email}</strong><br>
+                            <span style="color: ${result.status === 'success' ? '#2E7D32' : '#c62828'};">
+                                ${result.message}
+                            </span>
+                        `;
+                        
+                        resultsList.appendChild(resultItem);
+                    });
+                    
+                    resultsDiv.style.display = 'block';
+                    
+                    if (data.all_connected) {
+                        alert('✅ Tüm mail hesapları başarıyla bağlandı!');
+                    } else {
+                        alert('⚠️ Bazı hesaplarda bağlantı sorunu var! Detaylar için aşağıya bakın.');
+                    }
+                } else {
+                    alert('❌ Test hatası: ' + data.message);
+                }
+            } catch (error) {
+                alert('❌ Hata: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Bağlantıları Test Et';
+            }
+        }
     </script>
 </body>
 </html>
