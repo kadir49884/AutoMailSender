@@ -104,8 +104,11 @@ class MailSender:
                         pass
                     account['smtp'] = None
             
-            # Yeni bağlantı oluştur
-            smtp = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            # Yeni bağlantı oluştur (Port 587 TLS - Railway uyumlu)
+            smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.ehlo()
             smtp.login(account['email'], account['password'])
             account['smtp'] = smtp
             logging.info(f"Yeni SMTP bağlantısı açıldı: {account['email']}")
@@ -138,8 +141,11 @@ class MailSender:
             }
             
             try:
-                # Yeni SMTP bağlantısı oluştur ve test et
-                smtp = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
+                # Yeni SMTP bağlantısı oluştur ve test et (Port 587 TLS)
+                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
                 smtp.login(account['email'], account['password'])
                 smtp.noop()  # Bağlantıyı test et
                 smtp.quit()
