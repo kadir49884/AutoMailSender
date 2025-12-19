@@ -1,4 +1,5 @@
 python-dotenv
 firebase-admin
 flask
-gunicorn 
+gunicorn
+requests 

@@ -1,0 +1,31 @@
+============================================================
+⚠️  .env DOSYASINI GÜNCELLE
+============================================================
+
+📝 .env dosyasını aç ve bu satırı BUL:
+
+RAILWAY_PUBLIC_URL=https://automailsender-production.up.railway.app
+
+🔄 BUNUNLA DEĞİŞTİR:
+
+RAILWAY_PUBLIC_URL=http://localhost:5000
+
+============================================================
+
+💡 NEDEN?
+
+Local'den mail gönderiyorsun → Local stats kullanmalısın!
+
+✅ Böylece:
+- Mail local'den gönderilir
+- Button local'i işaret eder
+- Click local database'e kaydedilir
+- Stats local'de görünür
+
+============================================================
+
+📊 STATS:
+http://localhost:5000/stats
+
+============================================================
+

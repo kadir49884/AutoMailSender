@@ -202,6 +202,34 @@ def send_single():
         logging.error(f"Tekli mail gönderme hatası: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sync_tracking', methods=['POST'])
+def sync_tracking():
+    """Local'den gönderilen mailleri Railway database'e senkronize eder"""
+    try:
+        data = request.get_json()
+        
+        to_email = data.get('to_email')
+        from_email = data.get('from_email')
+        template_name = data.get('template_name')
+        tracking_id = data.get('tracking_id')
+        display_name = data.get('display_name')
+        
+        if not all([to_email, from_email, template_name, tracking_id]):
+            return jsonify({'error': 'Eksik parametreler'}), 400
+        
+        # Railway database'e kaydet
+        init_sender()
+        sender.record_sent_mail(to_email, from_email, template_name, display_name, tracking_id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tracking kaydı senkronize edildi'
+        })
+        
+    except Exception as e:
+        logging.error(f"Sync hatası: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/test_smtp', methods=['GET'])
 def test_smtp():
     """SMTP bağlantılarını test eder"""

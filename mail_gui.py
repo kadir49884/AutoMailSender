@@ -105,7 +105,7 @@ class SingleMailThread(QThread):
             try:
                 users = self.sender.get_firebase_users()
                 user = next((u for u in users if u['email'] == self.email), None)
-                display_name = user['display_name'] if user else None
+            display_name = user['display_name'] if user else None
             except Exception as e:
                 # Firebase hatası olsa bile devam et
                 logging.warning(f"Firebase kullanıcı bilgisi alınamadı: {str(e)}")

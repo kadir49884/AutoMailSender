@@ -5,6 +5,7 @@ import sqlite3
 import random
 import time
 import uuid
+import requests
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -229,7 +230,9 @@ class MailSender:
                     display_name TEXT,
                     tracking_id TEXT UNIQUE,
                     opened INTEGER DEFAULT 0,
-                    opened_date TIMESTAMP
+                    opened_date TIMESTAMP,
+                    clicked INTEGER DEFAULT 0,
+                    clicked_date TIMESTAMP
                 )
             ''')
             
@@ -294,6 +297,36 @@ class MailSender:
             conn.commit()
         finally:
             conn.close()
+    
+    def sync_to_railway(self, to_email, from_email, template_name, display_name, tracking_id):
+        """Gönderilen maili Railway database'e senkronize eder"""
+        try:
+            railway_url = os.getenv('RAILWAY_PUBLIC_URL', '')
+            
+            # Railway URL yoksa veya localhost ise sync yapma
+            if not railway_url or 'localhost' in railway_url or '127.0.0.1' in railway_url:
+                return
+            
+            # Railway'e HTTP POST yap
+            sync_url = f"{railway_url}/api/sync_tracking"
+            data = {
+                'to_email': to_email,
+                'from_email': from_email,
+                'template_name': template_name,
+                'display_name': display_name,
+                'tracking_id': tracking_id
+            }
+            
+            response = requests.post(sync_url, json=data, timeout=5)
+            
+            if response.status_code == 200:
+                logging.info(f"✅ Railway sync başarılı: {tracking_id[:8]}...")
+            else:
+                logging.warning(f"⚠️ Railway sync hatası: {response.status_code}")
+                
+        except Exception as e:
+            # Sync hatası mail gönderimini engellemez
+            logging.warning(f"Railway sync hatası (göz ardı edildi): {str(e)}")
     
     def is_mail_sent(self, email, template_name):
         """Belirtilen mail+template kombinasyonunun gönderilip gönderilmediğini kontrol eder"""
@@ -670,14 +703,17 @@ To unsubscribe, reply with 'Unsubscribe' in the subject line.
                 try:
                     # Maili gönder
                     smtp.send_message(msg)
-                    
+                
                     # Veritabanına kaydet (tracking_id ile)
                     self.record_sent_mail(to_email, account['email'], template_name, display_name, tracking_id)
-                    
+                
+                    # Railway'e senkronize et (farklı ağdan tracking için)
+                    self.sync_to_railway(to_email, account['email'], template_name, display_name, tracking_id)
+                
                     # Hesap istatistiklerini güncelle
                     account['daily_count'] += 1
                     account['last_used'] = datetime.now()
-                    
+                
                     logging.info(f"Mail başarıyla gönderildi: {to_email} (Gönderen: {account['email']})")
                     return True
                     
