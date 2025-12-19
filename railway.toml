@@ -1,0 +1,13 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Persistent volume for SQLite database
+[[deploy.volumes]]
+name = "mail-data"
+mountPath = "/data"
+

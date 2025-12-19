@@ -13,35 +13,12 @@ import logging
 import firebase_admin
 from firebase_admin import credentials, auth
 
+# Firebase yapılandırması
+cred = credentials.Certificate('firebase-credentials.json')
+firebase_admin.initialize_app(cred)
+
 # .env dosyasından Gmail bilgilerini al
 load_dotenv()
-
-# Firebase yapılandırması
-def init_firebase():
-    """Firebase'i başlatır - environment variable veya dosyadan"""
-    if firebase_admin._apps:
-        return  # Zaten başlatılmış
-    
-    try:
-        # Önce environment variable'dan dene
-        firebase_creds = os.getenv('FIREBASE_CREDENTIALS_JSON')
-        if firebase_creds:
-            cred_dict = json.loads(firebase_creds)
-            cred = credentials.Certificate(cred_dict)
-            logging.info("Firebase credentials environment variable'dan yüklendi")
-        else:
-            # Yoksa dosyadan oku
-            cred = credentials.Certificate('firebase-credentials.json')
-            logging.info("Firebase credentials dosyadan yüklendi")
-        
-        firebase_admin.initialize_app(cred)
-        logging.info("Firebase başarıyla başlatıldı")
-    except Exception as e:
-        logging.error(f"Firebase başlatma hatası: {str(e)}")
-        raise
-
-# Firebase'i başlat
-init_firebase()
 
 class MailSender:
     def __init__(self):
@@ -57,8 +34,11 @@ class MailSender:
         self.min_delay = 30     # Minimum bekleme süresi (30 saniye)
         self.max_delay = 90    # Maximum bekleme süresi (90 saniye)
         
-        # Veritabanı yolu
-        self.db_path = 'mail_tracking.db'
+        # Veritabanı yolu (Railway persistent volume)
+        data_dir = os.getenv('DATA_DIR', '/data')
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir, exist_ok=True)
+        self.db_path = os.path.join(data_dir, 'mail_tracking.db')
         
         # HTML şablonunu yükle
         with open('templates/email_template.html', 'r', encoding='utf-8') as f:
