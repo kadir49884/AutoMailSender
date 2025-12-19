@@ -142,7 +142,7 @@ class MailSender:
             
             try:
                 # Yeni SMTP bağlantısı oluştur ve test et (Port 587 TLS)
-                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
+                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
                 smtp.ehlo()
                 smtp.starttls()
                 smtp.ehlo()
