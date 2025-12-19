@@ -90,34 +90,44 @@ class MailSender:
         
     def get_smtp_connection(self, account):
         """Hesap için yeni bir SMTP bağlantısı oluşturur"""
-        try:
-            if account['smtp']:
-                try:
-                    # Bağlantıyı test et
-                    account['smtp'].noop()
-                    return account['smtp']
-                except:
-                    # Bağlantı kopmuşsa kapat
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                if account['smtp']:
                     try:
-                        account['smtp'].quit()
+                        # Bağlantıyı test et
+                        account['smtp'].noop()
+                        return account['smtp']
                     except:
-                        pass
-                    account['smtp'] = None
-            
-            # Yeni bağlantı oluştur (Port 587 TLS - Railway uyumlu)
-            smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
-            smtp.ehlo()
-            smtp.starttls()
-            smtp.ehlo()
-            smtp.login(account['email'], account['password'])
-            account['smtp'] = smtp
-            logging.info(f"Yeni SMTP bağlantısı açıldı: {account['email']}")
-            return smtp
-            
-        except Exception as e:
-            logging.error(f"SMTP bağlantı hatası ({account['email']}): {str(e)}")
-            account['smtp'] = None
-            return None
+                        # Bağlantı kopmuşsa kapat
+                        try:
+                            account['smtp'].quit()
+                        except:
+                            pass
+                        account['smtp'] = None
+                
+                # Yeni bağlantı oluştur (Port 587 TLS - Railway uyumlu)
+                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=15)
+                smtp.set_debuglevel(0)
+                smtp.ehlo()
+                smtp.starttls()
+                smtp.ehlo()
+                smtp.login(account['email'], account['password'])
+                account['smtp'] = smtp
+                logging.info(f"Yeni SMTP bağlantısı açıldı: {account['email']}")
+                return smtp
+                
+            except Exception as e:
+                retry_count += 1
+                logging.error(f"SMTP bağlantı hatası ({account['email']}, deneme {retry_count}/{max_retries}): {str(e)}")
+                account['smtp'] = None
+                
+                if retry_count < max_retries:
+                    time.sleep(2)  # Kısa bekleme
+                    
+        return None
     
     def close_smtp_connections(self):
         """Tüm SMTP bağlantılarını kapatır"""
@@ -133,6 +143,12 @@ class MailSender:
     def test_smtp_connections(self):
         """Tüm mail hesaplarının SMTP bağlantılarını test eder"""
         results = []
+        
+        # Railway SMTP desteğini kontrol et
+        is_railway = os.getenv('RAILWAY_ENVIRONMENT')
+        if is_railway:
+            logging.warning("Railway ortamı tespit edildi - SMTP sınırlamaları olabilir")
+        
         for account in self.mail_accounts:
             result = {
                 'email': account['email'],
@@ -142,7 +158,8 @@ class MailSender:
             
             try:
                 # Yeni SMTP bağlantısı oluştur ve test et (Port 587 TLS)
-                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=5)
+                smtp = smtplib.SMTP('smtp.gmail.com', 587, timeout=10)
+                smtp.set_debuglevel(0)
                 smtp.ehlo()
                 smtp.starttls()
                 smtp.ehlo()
@@ -158,6 +175,14 @@ class MailSender:
                 result['status'] = 'error'
                 result['message'] = 'Kimlik doğrulama hatası (Şifre yanlış) ❌'
                 logging.error(f"SMTP auth hatası: {account['email']}")
+                
+            except OSError as e:
+                result['status'] = 'error'
+                if 'Network is unreachable' in str(e) or 'Errno 101' in str(e):
+                    result['message'] = '⚠️ Railway SMTP engelliyor - Local GUI kullan'
+                else:
+                    result['message'] = f'Network hatası: {str(e)[:50]}... ❌'
+                logging.error(f"SMTP network hatası ({account['email']}): {str(e)}")
                 
             except Exception as e:
                 result['status'] = 'error'

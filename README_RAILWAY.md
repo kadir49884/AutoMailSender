@@ -103,6 +103,22 @@ Railway otomatik bir domain verir:
 → Environment variables'ları kontrol et
 → Gmail "Less secure apps" açık mı kontrol et (App Password kullan)
 
+**⚠️ Railway SMTP Sınırlaması**
+Railway bazı hesaplarda outbound SMTP'yi engelleyebilir. Eğer "Network unreachable" hatası alıyorsan:
+
+**Çözüm 1: Local GUI Kullan (Önerilen)**
+- Railway'de sadece dashboard çalışır
+- Mail gönderme için local'de `python mail_gui.py` çalıştır
+- 3495 mail için sorunsuz çalışır
+
+**Çözüm 2: Railway Custom Domain**
+- Railway'e custom domain ekle
+- SMTP limitleri custom domain'lerde daha az
+
+**Çözüm 3: Railway Business Plan**
+- Business plan'da SMTP sınırlamaları yok
+- Outbound network tam açık
+
 ## 🔒 Güvenlik
 
 - `.env` dosyası git'e eklenmesin

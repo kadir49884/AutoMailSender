@@ -256,7 +256,13 @@
                     if (data.all_connected) {
                         alert('✅ Tüm mail hesapları başarıyla bağlandı!');
                     } else {
-                        alert('⚠️ Bazı hesaplarda bağlantı sorunu var! Detaylar için aşağıya bakın.');
+                        // Railway SMTP engellemesi kontrolü
+                        const hasNetworkError = data.results.some(r => r.message.includes('Railway SMTP'));
+                        if (hasNetworkError) {
+                            alert('⚠️ Railway SMTP Engellemesi Tespit Edildi!\n\nRailway platformu SMTP bağlantılarını engelliyor.\n\n✅ Çözüm: Local\'de "python mail_gui.py" çalıştırın.\nLocal GUI ile sorunsuz çalışacaktır!');
+                        } else {
+                            alert('⚠️ Bazı hesaplarda bağlantı sorunu var! Detaylar için aşağıya bakın.');
+                        }
                     }
                 } else {
                     alert('❌ Test hatası: ' + data.message);
