@@ -190,6 +190,31 @@ def test_smtp():
             'message': f'Test hatası: {str(e)}'
         }), 500
 
+@app.route('/track/<tracking_id>')
+def track_open(tracking_id):
+    """Mail açılma tracking endpoint (1x1 pixel döndürür)"""
+    try:
+        init_sender()
+        # Mail açılma kaydını güncelle
+        sender.mark_email_opened(tracking_id)
+        logging.info(f"Mail açıldı: {tracking_id}")
+    except Exception as e:
+        logging.error(f"Tracking hatası: {str(e)}")
+    
+    # 1x1 transparan pixel döndür
+    pixel = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+    return pixel, 200, {'Content-Type': 'image/png', 'Cache-Control': 'no-cache, no-store, must-revalidate'}
+
+@app.route('/stats')
+def stats():
+    """Mail açılma istatistiklerini gösterir"""
+    try:
+        init_sender()
+        open_rate_stats = sender.get_open_rate_stats()
+        return render_template('stats.html', stats=open_rate_stats)
+    except Exception as e:
+        return f"Hata: {str(e)}", 500
+
 @app.route('/health')
 def health():
     """Health check endpoint"""

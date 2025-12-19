@@ -4,6 +4,7 @@ import smtplib
 import sqlite3
 import random
 import time
+import uuid
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -225,7 +226,10 @@ class MailSender:
                     from_email TEXT NOT NULL,
                     template_name TEXT NOT NULL,
                     sent_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    display_name TEXT
+                    display_name TEXT,
+                    tracking_id TEXT UNIQUE,
+                    opened INTEGER DEFAULT 0,
+                    opened_date TIMESTAMP
                 )
             ''')
             
@@ -278,15 +282,15 @@ class MailSender:
         finally:
             conn.close()
     
-    def record_sent_mail(self, to_email, from_email, template_name, display_name=None):
+    def record_sent_mail(self, to_email, from_email, template_name, display_name=None, tracking_id=None):
         """Gönderilen maili veritabanına kaydeder"""
         conn = self.get_db_connection()
         try:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO sent_mails (to_email, from_email, template_name, sent_date, display_name)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (to_email, from_email, template_name, datetime.now(), display_name))
+                INSERT INTO sent_mails (to_email, from_email, template_name, sent_date, display_name, tracking_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (to_email, from_email, template_name, datetime.now(), display_name, tracking_id))
             conn.commit()
         finally:
             conn.close()
@@ -295,6 +299,75 @@ class MailSender:
         """Belirtilen mail+template kombinasyonunun gönderilip gönderilmediğini kontrol eder"""
         # Artık her zaman False döndürüyoruz çünkü tekrar gönderime izin veriyoruz
         return False
+    
+    def mark_email_opened(self, tracking_id):
+        """Mail açıldığında tracking ID'ye göre database'i günceller"""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE sent_mails 
+                SET opened = 1, opened_date = ?
+                WHERE tracking_id = ? AND opened = 0
+            ''', (datetime.now(), tracking_id))
+            conn.commit()
+            
+            # Güncellenen kayıt varsa True döndür
+            return cursor.rowcount > 0
+        except Exception as e:
+            logging.error(f"Mail açılma kaydı hatası: {str(e)}")
+            return False
+        finally:
+            conn.close()
+    
+    def get_open_rate_stats(self):
+        """Mail açılma istatistiklerini getirir"""
+        conn = self.get_db_connection()
+        try:
+            cursor = conn.cursor()
+            
+            # Toplam gönderilen ve açılan mail sayıları
+            cursor.execute('''
+                SELECT 
+                    COUNT(*) as total_sent,
+                    SUM(opened) as total_opened,
+                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate
+                FROM sent_mails
+                WHERE tracking_id IS NOT NULL
+            ''')
+            overall = cursor.fetchone()
+            
+            # Template bazlı istatistikler
+            cursor.execute('''
+                SELECT 
+                    template_name,
+                    COUNT(*) as sent,
+                    SUM(opened) as opened,
+                    ROUND(CAST(SUM(opened) AS FLOAT) / COUNT(*) * 100, 2) as open_rate
+                FROM sent_mails
+                WHERE tracking_id IS NOT NULL
+                GROUP BY template_name
+            ''')
+            by_template = cursor.fetchall()
+            
+            return {
+                'overall': {
+                    'total_sent': overall[0] or 0,
+                    'total_opened': overall[1] or 0,
+                    'open_rate': overall[2] or 0.0
+                },
+                'by_template': [
+                    {
+                        'template': row[0],
+                        'sent': row[1],
+                        'opened': row[2] or 0,
+                        'open_rate': row[3] or 0.0
+                    }
+                    for row in by_template
+                ]
+            }
+        finally:
+            conn.close()
     
     def get_sent_users(self, template_name):
         """Belirtilen template için mail gönderilmiş kullanıcıları getirir"""
@@ -493,6 +566,9 @@ class MailSender:
                 template = self.templates[template_name]
                 display_name = self.get_display_name(to_email, display_name)
                 
+                # Unique tracking ID oluştur
+                tracking_id = str(uuid.uuid4())
+                
                 # Mail içeriğini hazırla
                 msg = MIMEMultipart('alternative')
                 msg['Subject'] = template['subject']
@@ -528,6 +604,11 @@ To unsubscribe, reply with 'Unsubscribe' in the subject line.
                     button_text=template['button_text']
                 )
                 
+                # Tracking pixel ekle (Railway URL'den veya localhost'tan)
+                tracking_url = os.getenv('RAILWAY_PUBLIC_URL', 'http://localhost:5000')
+                tracking_pixel = f'<img src="{tracking_url}/track/{tracking_id}" width="1" height="1" style="display:none;" />'
+                html_content = html_content.replace('</body>', f'{tracking_pixel}</body>')
+                
                 # Plain text önce, sonra HTML (mail clientlar en iyisini seçer)
                 msg.attach(MIMEText(plain_text, 'plain'))
                 msg.attach(MIMEText(html_content, 'html'))
@@ -543,8 +624,8 @@ To unsubscribe, reply with 'Unsubscribe' in the subject line.
                     # Maili gönder
                     smtp.send_message(msg)
                     
-                    # Veritabanına kaydet
-                    self.record_sent_mail(to_email, account['email'], template_name, display_name)
+                    # Veritabanına kaydet (tracking_id ile)
+                    self.record_sent_mail(to_email, account['email'], template_name, display_name, tracking_id)
                     
                     # Hesap istatistiklerini güncelle
                     account['daily_count'] += 1
