@@ -91,6 +91,31 @@ Railway otomatik bir domain verir:
 3. Database SQLite (Railway restart'ta silinir)
 4. Persistent storage için PostgreSQL eklenebilir
 
+## 📊 Mail Açılma Tracking Sistemi
+
+**Otomatik Tracking:**
+- ✅ Her gönderilen mail unique tracking ID alır
+- ✅ Mail açıldığında 1x1 pixel Railway'e istek atar
+- ✅ Database'de açılma kaydedilir
+
+**İstatistikleri Görüntüle:**
+1. Railway dashboard'u aç
+2. **"📊 İstatistikler"** butonuna tıkla
+3. Şunları görebilirsin:
+   - Toplam gönderilen mail sayısı
+   - Açılan mail sayısı
+   - Açılma oranı (%)
+   - Template bazlı detaylı istatistikler
+
+**Tracking URL:**
+```
+https://your-railway-url.com/track/<tracking_id>
+```
+
+**Not:** Railway URL'i otomatik olarak environment variable'dan alınır (`RAILWAY_PUBLIC_URL`). Local'de localhost kullanılır.
+
+---
+
 ## 🆘 Sorun Giderme
 
 **Hata: Module not found**
