@@ -168,6 +168,40 @@ def stop():
     job_status['message'] = 'Durduruldu'
     return jsonify({'success': True})
 
+@app.route('/send_single', methods=['POST'])
+def send_single():
+    """Tekli mail gönderir"""
+    try:
+        init_sender()
+        
+        email = request.form.get('email', '').strip()
+        template_name = request.form.get('template')
+        
+        if not email:
+            return jsonify({'error': 'Email adresi gerekli'}), 400
+        
+        if not template_name:
+            return jsonify({'error': 'Template seçilmedi'}), 400
+        
+        # Kara liste kontrolü
+        if sender.is_blacklisted(email):
+            return jsonify({'error': f'{email} kara listede!'}), 400
+        
+        # Mail gönder
+        success = sender.send_mail(email, template_name, display_name=None)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'✅ Mail başarıyla gönderildi: {email}'
+            })
+        else:
+            return jsonify({'error': 'Mail gönderilemedi'}), 500
+            
+    except Exception as e:
+        logging.error(f"Tekli mail gönderme hatası: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/test_smtp', methods=['GET'])
 def test_smtp():
     """SMTP bağlantılarını test eder"""

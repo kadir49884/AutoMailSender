@@ -106,6 +106,31 @@
         </div>
         
         <div class="card">
+            <h2>📧 Tekli Mail Gönder</h2>
+            <p style="color: #666; margin-bottom: 20px;">Tek bir kullanıcıya mail gönder</p>
+            
+            <div class="form-group">
+                <label>Mail Adresi:</label>
+                <input type="email" id="singleEmail" placeholder="ornek@gmail.com" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;">
+            </div>
+            
+            <div class="form-group">
+                <label>Mail Şablonu:</label>
+                <select id="singleTemplate" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px;">
+                    {% for template in stats.templates %}
+                    <option value="{{ template }}">{{ template }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button onclick="sendSingleMail()" style="width: 100%; padding: 15px; background: #2E7D32; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                📨 Mail Gönder
+            </button>
+            
+            <div id="singleMailResult" style="margin-top: 20px; padding: 15px; border-radius: 6px; display: none;"></div>
+        </div>
+        
+        <div class="card">
             <h2>🔧 SMTP Bağlantı Testi</h2>
             <p style="color: #666; margin-bottom: 15px;">Tüm mail hesaplarının bağlantı durumunu kontrol et</p>
             <button type="button" id="testSmtpBtn" onclick="testSmtpConnections()">
@@ -273,6 +298,63 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔍 Bağlantıları Test Et';
+            }
+        }
+        
+        async function sendSingleMail() {
+            const email = document.getElementById('singleEmail').value.trim();
+            const template = document.getElementById('singleTemplate').value;
+            const resultDiv = document.getElementById('singleMailResult');
+            
+            if (!email) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#ffebee';
+                resultDiv.style.color = '#c62828';
+                resultDiv.textContent = '❌ Mail adresi giriniz!';
+                return;
+            }
+            
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                resultDiv.style.display = 'block';
+                resultDiv.style.background = '#ffebee';
+                resultDiv.style.color = '#c62828';
+                resultDiv.textContent = '❌ Geçerli bir mail adresi giriniz!';
+                return;
+            }
+            
+            resultDiv.style.display = 'block';
+            resultDiv.style.background = '#e3f2fd';
+            resultDiv.style.color = '#1976d2';
+            resultDiv.textContent = '📨 Mail gönderiliyor...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('template', template);
+                
+                const response = await fetch('/send_single', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.style.background = '#f1f8f4';
+                    resultDiv.style.color = '#2E7D32';
+                    resultDiv.textContent = data.message;
+                    document.getElementById('singleEmail').value = '';
+                } else {
+                    resultDiv.style.background = '#ffebee';
+                    resultDiv.style.color = '#c62828';
+                    resultDiv.textContent = '❌ ' + (data.error || 'Mail gönderilemedi');
+                }
+            } catch (error) {
+                resultDiv.style.background = '#ffebee';
+                resultDiv.style.color = '#c62828';
+                resultDiv.textContent = '❌ Hata: ' + error.message;
             }
         }
     </script>
