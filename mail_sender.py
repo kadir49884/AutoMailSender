@@ -14,8 +14,21 @@ import firebase_admin
 from firebase_admin import credentials, auth
 
 # Firebase yapılandırması
-cred = credentials.Certificate('firebase-credentials.json')
-firebase_admin.initialize_app(cred)
+def init_firebase():
+    """Firebase'i environment variable'dan yükle"""
+    firebase_creds = os.getenv('FIREBASE_CREDENTIALS_JSON')
+    if firebase_creds:
+        # Environment variable'dan JSON yükle
+        cred_dict = json.loads(firebase_creds)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        # Local development için dosyadan yükle
+        cred = credentials.Certificate('firebase-credentials.json')
+    
+    firebase_admin.initialize_app(cred)
+
+# Firebase'i başlat
+init_firebase()
 
 # .env dosyasından Gmail bilgilerini al
 load_dotenv()
