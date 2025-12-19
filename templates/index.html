@@ -62,6 +62,8 @@
         
         <div class="status" id="statusBox">
             <strong>Durum:</strong> <span id="statusText">{{ status.message }}</span>
+            <br>
+            <span id="accountInfo" style="font-size: 14px; color: #666;"></span>
         </div>
         
         <div class="progress-bar" id="progressBar" style="display: none;">
@@ -176,6 +178,14 @@
                 document.getElementById('successCount').textContent = status.success;
                 document.getElementById('failedCount').textContent = status.failed;
                 document.getElementById('progressText').textContent = `${status.progress}/${status.total}`;
+                
+                // Hesap bilgisini göster
+                const accountInfo = document.getElementById('accountInfo');
+                if (status.running && status.current_account) {
+                    accountInfo.textContent = `📧 Aktif hesap: ${status.current_account}`;
+                } else {
+                    accountInfo.textContent = '';
+                }
                 
                 if (status.total > 0) {
                     const percentage = Math.round((status.progress / status.total) * 100);

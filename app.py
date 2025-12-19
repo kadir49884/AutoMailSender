@@ -18,6 +18,7 @@ job_status = {
     'success': 0,
     'failed': 0,
     'current_template': None,
+    'current_account': None,
     'started_at': None,
     'message': 'Hazır'
 }
@@ -128,8 +129,14 @@ def send_mails_background(template_name, send_type):
                 break
             
             # Mail gönder
-            if sender.send_mail(email, template_name, user.get('display_name')):
+            result = sender.send_mail(email, template_name, user.get('display_name'))
+            if result:
                 job_status['success'] += 1
+                # Son kullanılan hesabı bul
+                for account in sender.mail_accounts:
+                    if account.get('last_used'):
+                        job_status['current_account'] = account['email']
+                        break
             else:
                 job_status['failed'] += 1
             
